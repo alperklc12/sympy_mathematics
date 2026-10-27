@@ -1,3 +1,27 @@
+"""SymPy ile fonksiyonlar — başlangıç çalışma materyali.
+
+Önce açıklamaları oku, sonra kodu çalıştır ve sonuçlarla karşılaştır.
+Her bölümde önce matematiksel işlem, ardından Python karşılığı gösterilir.
+
+KURULUM VE ÇALIŞTIRMA (komutları PyCharm Terminal penceresine yaz)
+    python -m pip install sympy
+    python "fonksiyon tanımlama"
+
+Dosyanın mevcut adı uzantısızdır. Terminalde yukarıdaki komutla çalışır.
+PyCharm'da Run kullanmak için yerel bir kopyasını fonksiyon_tanimlama.py
+adıyla kaydedebilirsin; komutlarda da bu yeni adı kullan.
+Paketleri PyCharm projesinde seçili olan Python yorumlayıcısına kur.
+
+Grafikler isteğe bağlıdır; yalnızca bunlar için Matplotlib kur:
+    python -m pip install matplotlib
+    python "fonksiyon tanımlama" --grafik
+    python "fonksiyon tanımlama" --grafik-kaydet grafik.png
+İlk seçenek pencere açar; ikinci seçenek pencere açmadan resim kaydeder.
+Grafik seçeneği verilmezse yalnızca metin çıktısı oluşur.
+Alıştırmaların çözümleri:
+    python "fonksiyon tanımlama" --cozumler
+
+MEVCUT ÖRNEK (özgün yedi satır, başvuru için aynen korunmuştur)
 import sympy as sp
 from IPython.display import display, Math
 sp.init_printing()
@@ -5,3 +29,251 @@ x = sp.symbols("x")
 f = sp.symbols("f", cls=sp.Function)
 f = f(x)
 f = sp.Eq(f, x+1)
+
+Bu blok açıklama metnidir; aşağıdaki ders çalıştırılır. IPython satırı
+notebook ortamında gösterim içindir; özgün örnekte display ve Math zaten
+kullanılmıyordu. Terminal dersinde IPython kurulması gerekmez.
+
+SÖZLÜK
+    sp               : sympy paketine verdiğimiz kısa ad.
+    x                : bağımsız değişkeni temsil eden sembol; bir sayı değil.
+    F                : kuralı henüz belirtilmemiş sembolik fonksiyon.
+    F(x)             : bu fonksiyonun x girdisindeki sembolik değeri.
+    ifade = x + 1    : üzerinde hesap yaptığımız matematiksel ifade.
+    denklem          : F(x) ile x + 1 arasındaki eşitliği temsil eden nesne.
+    dogrusal(t)      : çağrılınca işlem yapan bir Python fonksiyonu.
+    t                : bu Python fonksiyonunun yerel girdi adı; zaman değil.
+
+Bu derste somut fonksiyonları R -> R olarak ele alıyoruz. R gerçek sayılar
+kümesidir. Rasyonel örneğin tanım kümesi R \\ {1} olarak ayrıca belirtilir.
+SymPy'de bir ifade tek başına tanım/değer kümesini kaydeden tam bir
+matematiksel fonksiyon tanımı değildir; kümeleri biz takip ederiz.
+
+Okuma sırası: 1) sembol/ifade/denklem, 2) Python fonksiyonu,
+3) sadeleştirme, 4) türev, 5) değer, 6) grafik, 7) alıştırmalar.
+
+Resmî başvuru kaynakları:
+https://docs.sympy.org/latest/tutorials/intro-tutorial/gotchas.html
+https://docs.sympy.org/latest/tutorials/intro-tutorial/basic_operations.html
+https://docs.sympy.org/latest/tutorials/intro-tutorial/simplification.html
+https://docs.sympy.org/latest/tutorials/intro-tutorial/calculus.html
+https://docs.sympy.org/latest/modules/plotting.html
+"""
+
+import argparse
+
+import sympy as sp
+
+
+def dogrusal(t: sp.Expr | int | float) -> sp.Expr:
+    """Gerçek girdiler için t + 1 kuralını uygula; sembol de kabul eder."""
+    # Tür ipuçları beklenen girdi/çıktıyı anlatır, işlem yapmaz.
+    # sympify burada sayı veya sembolü SymPy nesnesine dönüştürür.
+    # return hesaplanan sonucu çağıran yere geri verir.
+    return sp.sympify(t) + 1
+
+
+def calisma() -> None:
+    """Açıklamalı örnekleri sırayla çalıştır ve sonuçlarını yazdır."""
+    sp.init_printing()
+    # init_printing etkileşimli ortamın gösterimini düzenler.
+    # .py dosyasında sonuçları görebilmek için yine print kullanıyoruz.
+
+    # 1. SEMBOL, FONKSİYON, İFADE VE DENKLEM
+    # Özgün örnekte f adı üç farklı nesneye sırayla atanıyordu:
+    # önce fonksiyon, sonra f(x), son olarak Eq(f(x), x + 1).
+    # Aynı işlemi ayrı adlarla yazalım; böylece her nesnenin rolü açıktır.
+    x = sp.symbols("x", real=True)
+    F = sp.symbols("f", cls=sp.Function)
+    # cls=sp.Function, "f" adından bir sembolik fonksiyon oluşturur.
+    # F = sp.Function("f") aynı işin daha kısa yazımıdır.
+    ifade = x + 1
+    denklem = sp.Eq(F(x), ifade)
+
+    print("\n1. Sembol, ifade ve denklem")
+    print("Sembol:", x)                       # x
+    print("Kuralı henüz belirtilmeyen değer:", F(x))  # f(x)
+    print("İfade:", ifade)                    # x + 1
+    print("Denklem:", denklem)                # Eq(f(x), x + 1)
+    print("Sol taraf:", denklem.lhs)          # f(x)
+    print("Sağ taraf:", denklem.rhs)          # x + 1
+    print("F(2) hâlâ sembolik:", F(2))         # f(2)
+
+    # = bir Python adına nesne atar: ifade = x + 1.
+    # == iki nesnenin yapısal eşitliğini karşılaştırır; denklem kurmaz.
+    # sp.Eq(sol, sag) matematiksel eşitliği temsil eder; çözüm komutu değildir.
+    # Eq bazı açık eşitlikleri hemen True/False olarak da değerlendirebilir.
+    # Eq(F(x), x + 1), F'ye çağrılabilir bir kural yüklemez! F(2) otomatik
+    # olarak 3 olmaz. Hesap için sağ tarafı, yani ifadeyi kullanacağız.
+
+    # 2. ÇAĞRILABİLİR BİR PYTHON FONKSİYONU
+    # Matematik: f: R -> R, f(x) = x + 1.
+    # Yukarıda def ile tanımladığımız dogrusal bu kuralı gerçekten uygular.
+    print("\n2. Python fonksiyonu")
+    print("dogrusal(2) =", dogrusal(2))        # 3
+    print("dogrusal(x) =", dogrusal(x))        # x + 1
+    print("İfadede x yerine 2 =", ifade.subs(x, 2))  # 3
+    # subs = substitution, yani yerine koyma. ifade(2) yazılmaz;
+    # ifade bir SymPy ifadesidir, dogrusal gibi Python fonksiyonu değildir.
+
+    # 3. SADELEŞTİRME: ÖNCE CEBİR, SONRA KOMUT
+    # g(x) = (x^2 - 1)/(x - 1), g: R \\ {1} -> R.
+    # x^2 - 1 = (x - 1)(x + 1).
+    # x != 1 iken ortak (x - 1) çarpanı sadeleşir, sonuç x + 1 olur.
+    rasyonel = (x**2 - 1) / (x - 1)
+    sade = sp.simplify(rasyonel)
+    print("\n3. Sadeleştirme")
+    print("Başlangıç:", rasyonel)
+    print("Sade biçim:", sade)                 # x + 1
+    print("Özgün ifadede x=2:", rasyonel.subs(x, 2))  # 3
+    print("Özgün ifadede x=1:", rasyonel.subs(x, 1))  # nan
+    print("Sade ifadede x=1:", sade.subs(x, 1))       # 2
+    # nan burada 0/0 belirsizliğinin SymPy çıktısıdır; bir fonksiyon değeri
+    # değildir. Sadeleştirme, özgün fonksiyonun x=1 noktasını tanımlamaz.
+    # İki ifade yalnızca özgün tanım kümesinde aynı değerleri verir.
+    # subs özgün ifadeyi değiştirmez; yeni bir sonuç döndürür.
+    # simplify genel bir denemedir; her zaman istediğimiz biçimi seçmez.
+    # Hedef belliyse expand (açma) veya factor (çarpanlara ayırma) seçebiliriz.
+    print("(x+1)^2 açılımı:", sp.expand((x + 1)**2))  # x**2 + 2*x + 1
+    print("x^2-1 çarpanları:", sp.factor(x**2 - 1))   # (x - 1)*(x + 1)
+    # Python'da üs **, çarpma * ile yazılır. ^ üs alma işlemi değildir.
+
+    # 4. TÜREV: x'E GÖRE DEĞİŞİM
+    # h: R -> R, h(x) = x^2 + 1.
+    # d(x^2)/dx = 2x ve d(1)/dx = 0; toplamın türevi 2x + 0 = 2x.
+    h = x**2 + 1
+    turev = sp.diff(h, x)
+    print("\n4. Türev")
+    print("h(x) =", h)                         # x**2 + 1
+    print("h'(x) =", turev)                    # 2*x
+    print("h'(2) =", turev.subs(x, 2))         # 4
+    print("(x+1)' =", sp.diff(ifade, x))       # 1
+    # diff(h, x): h ifadesinin x'e göre türevini al.
+    # h'(2)=4, h grafiğinin (2,5) noktasındaki teğet eğimidir;
+    # h(2)=5 ise fonksiyonun değeridir. Bunlar farklı soruların yanıtlarıdır.
+
+    # 5. KESİN DEĞER VE YAKLAŞIK DEĞER
+    # h(2) = 2^2 + 1 = 5.
+    # h(1/2) = (1/2)^2 + 1 = 1/4 + 1 = 5/4.
+    yarim = sp.Rational(1, 2)
+    kesin = h.subs(x, yarim)
+    print("\n5. Değer hesaplama")
+    print("h(2) =", h.subs(x, 2))              # 5
+    print("h(1/2), kesin =", kesin)            # 5/4
+    print("h(1/2), ondalık =", kesin.evalf())   # 1.25000000000000
+    print("sqrt(2), kesin =", sp.sqrt(2))      # sqrt(2)
+    print("sqrt(2), yaklaşık =", sp.sqrt(2).evalf(6))  # 1.41421
+    # evalf(6), ondalık noktadan sonra 6 basamak değil, 6 anlamlı basamak ister.
+    # Python 1/2 işlemini önce 0.5 yapar; kesin kesir için Rational kullan.
+    # Bu örnekte 0.5 tam temsil edilebilir; örneğin 1/3 için bu geçerli değildir.
+    print("Kesin üçte bir:", sp.Rational(1, 3))  # 1/3
+
+    # GRAFİK ÖNCESİ DEĞER TABLOSU
+    # Her satır (a, h(a)) bir grafik noktasıdır. a burada sayısal girdidir.
+    print("\n6. h(x)=x^2+1 için değer tablosu")
+    for a in [-2, -1, 0, 1, 2]:
+        print(f"x={a:2d}, h(x)={h.subs(x, a)}")
+    # Beklenen değerler: 5, 2, 1, 2, 5.
+    # Parabolün en alt noktası (0,1), simetri ekseni x=0'dır.
+    # Çizim aralığı [-3,3] seçilse de h'nin tanım kümesi bütün R'dir.
+
+    print("\n7. Kısa alıştırmalar (önce kendin dene)")
+    print("1) k: R -> R, k(x)=2*x+3. İfadesini ve Eq ile denklemini yaz.")
+    print("   k(4) kaçtır? Eq kurduğunda sembolik K(4) otomatik hesaplanır mı?")
+    print("2) (x**2-4)/(x-2) ifadesini elle ve simplify ile sadeleştir.")
+    print("   Özgün tanım kümesinden hangi sayı çıkarılır? Neden?")
+    print("3) p: R -> R, p(x)=x**3-3*x. Türevini bul ve p'(2)'yi hesapla.")
+    print("4) h(x)=x**2+1 için h(1/3)'ü kesin ve yaklaşık hesapla.")
+    print("5) grafik_ciz içinde parabol = (x-1)**2+1 yapıp yeniden çiz.")
+    print("   En alt nokta nereye taşınır? Önce tahmin et, sonra kontrol et.")
+    print("Çözümler için aynı komuta --cozumler ekle.")
+
+
+def cozumler() -> None:
+    """Alıştırmaların cebirsel adımlarını ve çalışan kod sonuçlarını göster."""
+    x = sp.symbols("x", real=True)
+    K = sp.Function("k")
+    k = 2*x + 3
+    print("\nAlıştırma çözümleri")
+    print("1) k=2*x+3; denklem=sp.Eq(K(x), k):", sp.Eq(K(x), k))
+    print("   k(4)=2*4+3=11; k.subs(x,4):", k.subs(x, 4))
+    print("   Eq, K'ye hesap kuralı yüklemez; K(4):", K(4))
+    q = (x**2 - 4)/(x - 2)
+    print("2) (x-2)*(x+2)/(x-2)=x+2, yalnızca x!=2 için.")
+    print("   sp.simplify(q):", sp.simplify(q))
+    print("   Tanım kümesi R \\ {2}; x=2'de özgün payda sıfırdır.")
+    p = x**3 - 3*x
+    dp = sp.diff(p, x)
+    print("3) d(x^3)/dx - d(3x)/dx = 3*x^2-3; sp.diff(p,x):", dp)
+    print("   p'(2)=3*2^2-3=9; dp.subs(x,2):", dp.subs(x, 2))
+    deger = (x**2 + 1).subs(x, sp.Rational(1, 3))
+    print("4) (1/3)^2+1 = 1/9+9/9 = 10/9:", deger)
+    print("   deger.evalf(6):", deger.evalf(6))  # 1.11111
+    print("5) (x-1)^2 >= 0; eşitlik x=1'de sağlanır. En alt nokta (1,1).")
+    print("   Eski (0,1) noktası 1 birim sağa taşındı.")
+
+
+def grafik_ciz(goster: bool = True, kayit_yolu: str | None = None) -> None:
+    """Doğruyu ve parabolü çiz; istenirse görüntüyü dosyaya kaydet."""
+    # sp.plot'a Eq nesnesi değil, sağ taraftaki ifadeyi veriyoruz.
+    # İlk iki argüman çizilecek ifadeler; (x,-3,3) değişken ve aralığıdır.
+    # show=False grafiği hazırlar; henüz pencere açmaz.
+    # Matplotlib yalnızca bu isteğe bağlı bölümde gereklidir.
+    try:
+        import matplotlib  # Çizim arka ucunun kurulu olduğunu kontrol et.
+    except ImportError as hata:
+        raise SystemExit(
+            "Grafik için PyCharm Terminal'de python -m pip install matplotlib çalıştır."
+        ) from hata
+
+    x = sp.symbols("x", real=True)
+    dogru = x + 1
+    parabol = x**2 + 1  # 5. alıştırmada yalnızca bu ifadeyi değiştir.
+    grafik = sp.plot(
+        dogru,
+        parabol,
+        (x, -3, 3),
+        show=False,
+        backend="matplotlib",
+        legend=True,
+        xlabel="x",
+        ylabel="y",
+        title="Bir doğru ve bir parabol",
+    )
+    # Etiket ve renkler, hangi eğrinin hangi ifadeye ait olduğunu gösterir.
+    grafik[0].label = f"f(x) = {dogru}"
+    grafik[0].line_color = "blue"
+    grafik[1].label = f"h(x) = {parabol}"
+    grafik[1].line_color = "red"
+    # Doğru: (0,1) ve (1,2). Parabol: (0,1), (1,2), (-1,2).
+    # İki eğri x=0 ve x=1'de kesişir; değer tablosuyla kontrol et.
+    # Bu sürekli polinomların grafiği basit bir başlangıç örneğidir.
+    # Rasyonel örneği çizersen sade biçim, çıkarılan noktayı göstermez;
+    # tanım kümesindeki boşluğu ayrıca belirtmen gerekir.
+    if kayit_yolu is not None:
+        grafik.save(kayit_yolu)
+        print("Grafik kaydedildi:", kayit_yolu)
+    if goster:
+        grafik.show()
+    else:
+        grafik.close()
+
+
+def main() -> None:
+    """Terminal seçeneklerini oku ve seçilen ders bölümlerini çalıştır."""
+    # Bu bölüm yalnızca çalıştırma kolaylığı içindir; ilk okumada atlanabilir.
+    parser = argparse.ArgumentParser(description=__doc__)
+    parser.add_argument("--grafik", action="store_true", help="Grafik penceresini aç.")
+    parser.add_argument("--grafik-kaydet", metavar="DOSYA.png", help="Grafiği kaydet.")
+    parser.add_argument("--cozumler", action="store_true", help="Alıştırma çözümlerini göster.")
+    secenekler = parser.parse_args()
+    calisma()
+    if secenekler.cozumler:
+        cozumler()
+    if secenekler.grafik or secenekler.grafik_kaydet:
+        grafik_ciz(goster=secenekler.grafik, kayit_yolu=secenekler.grafik_kaydet)
+
+
+if __name__ == "__main__":
+    # Dosya doğrudan çalıştırılırsa dersi başlat; başka dosyadan yüklenirse başlatma.
+    main()
